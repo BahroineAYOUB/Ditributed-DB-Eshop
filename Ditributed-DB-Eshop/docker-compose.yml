@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+
+  oracle-main:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-main
+    hostname: oracle-main
+    environment:
+      ORACLE_PASSWORD: Admin1234
+      ORACLE_DATABASE: XEPDB1
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-main-data:/opt/oracle/oradata
+      - ./scripts/main:/container-entrypoint-initdb.d
+    networks:
+      eshop_network:
+        ipv4_address: 172.20.0.2
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "sys/Admin1234@//localhost/XE as sysdba", "<<< 'SELECT 1 FROM DUAL;'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  oracle-site1:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-site1
+    hostname: oracle-site1
+    environment:
+      ORACLE_PASSWORD: Admin1234
+      ORACLE_DATABASE: XEPDB1
+    ports:
+      - "1522:1521"
+    volumes:
+      - oracle-site1-data:/opt/oracle/oradata
+      - ./scripts/site1:/container-entrypoint-initdb.d
+    networks:
+      eshop_network:
+        ipv4_address: 172.20.0.3
+    depends_on:
+      oracle-main:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "sys/Admin1234@//localhost/XE as sysdba", "<<< 'SELECT 1 FROM DUAL;'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  oracle-site2:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-site2
+    hostname: oracle-site2
+    environment:
+      ORACLE_PASSWORD: Admin1234
+      ORACLE_DATABASE: XEPDB1
+    ports:
+      - "1523:1521"
+    volumes:
+      - oracle-site2-data:/opt/oracle/oradata
+      - ./scripts/site2:/container-entrypoint-initdb.d
+    networks:
+      eshop_network:
+        ipv4_address: 172.20.0.4
+    depends_on:
+      oracle-main:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "sys/Admin1234@//localhost/XE as sysdba", "<<< 'SELECT 1 FROM DUAL;'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+networks:
+  eshop_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  oracle-main-data:
+  oracle-site1-data:
+  oracle-site2-data:

@@ -1,2 +1,0 @@
-# Ditributed-DB-Eshop
-
